@@ -1,0 +1,10 @@
+@startuml
+[*] --> Idle
+Idle --> Initializing : User Starts Simulation
+Initializing --> RunningSimulation : Components Ready
+RunningSimulation --> AdjustingPressure : Demand Changes
+AdjustingPressure --> FlowDistribution : Pressure Adjusted
+FlowDistribution --> DisplayResults : Flow Calculated
+DisplayResults --> Finished : Results Displayed
+Finished --> Idle : Wait for Next Run
+@enduml

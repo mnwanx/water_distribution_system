@@ -1,107 +1,144 @@
 #include <iostream>
 #include <vector>
+#include <string>
+using namespace std;
 
-// Superclass for all water system components
+// Base Class: Water System Component
 class WaterSystemComponent {
-public:
-    std::string name;
-    double pressure;
-    double flowRate;
+protected:
+    string name;
+    double pressure, flowRate;
 
-    WaterSystemComponent(std::string n, double p, double f) 
-        : name(n), pressure(p), flowRate(f) {}
+public:
+    WaterSystemComponent(string n, double p, double f) : name(n), pressure(p), flowRate(f) {}
+    virtual void simulate() = 0; // Abstract method
+    virtual double calculateFlow() = 0; // Abstract flow calculation
 
     virtual void displayInfo() {
-        std::cout << "Component: " << name << "\nPressure: " << pressure 
-                  << " kPa\nFlow Rate: " << flowRate << " L/s\n";
-    }
-
-    virtual void simulate() {
-        std::cout << name << " simulation running...\n";
+        cout << "Component: " << name 
+             << " | Pressure: " << pressure << " kPa"
+             << " | Flow Rate: " << flowRate << " L/s" << endl;
     }
 };
 
-// Pipe class inheriting from WaterSystemComponent
+// Pipe Class
 class Pipe : public WaterSystemComponent {
 public:
-    double diameter;
+    double diameter, length;
 
-    Pipe(std::string n, double d, double f, double p) 
-        : WaterSystemComponent(n, p, f), diameter(d) {}
+    Pipe(string n, double d, double l, double p, double f) 
+        : WaterSystemComponent(n, p, f), diameter(d), length(l) {}
+
+    double calculateFlow() override {
+        // Simplified formula: Flow = Area * Pressure Factor
+        return (3.14 * (diameter / 2) * (diameter / 2)) * (pressure / 10);
+    }
 
     void simulate() override {
-        std::cout << "Pipe '" << name << "' - Diameter: " << diameter 
-                  << " cm - Flow: " << flowRate << " L/s\n";
+        cout << "Simulating Pipe: " << name 
+             << " | Diameter: " << diameter << " cm"
+             << " | Flow: " << calculateFlow() << " L/s" << endl;
     }
 };
 
-// Pump class inheriting from WaterSystemComponent
+// Pump Class with Cost Control
 class Pump : public WaterSystemComponent {
 public:
-    double power;
+    double powerUsage;
+    double costPerUnit;
 
-    Pump(std::string n, double pow, double p, double f) 
-        : WaterSystemComponent(n, p, f), power(pow) {}
+    Pump(string n, double p, double f, double power, double cost) 
+        : WaterSystemComponent(n, p, f), powerUsage(power), costPerUnit(cost) {}
 
-    void adjustPressure(double increase) {
-        pressure += increase;
-        std::cout << "Pump '" << name << "' increased pressure by " << increase 
-                  << " kPa. New Pressure: " << pressure << " kPa\n";
+    void adjustPressure(double demand) {
+        pressure = (demand > flowRate) ? pressure + 5 : pressure - 5;
+        powerUsage += 0.1 * demand; // Simulating increased power usage
     }
-};
 
-// Reservoir class inheriting from WaterSystemComponent
-class Reservoir : public WaterSystemComponent {
-public:
-    double capacity, currentLevel;
-
-    Reservoir(std::string n, double cap, double cl, double p, double f) 
-        : WaterSystemComponent(n, p, f), capacity(cap), currentLevel(cl) {}
-
-    void supplyWater(double demand) {
-        if (currentLevel >= demand) {
-            currentLevel -= demand;
-            std::cout << "Reservoir '" << name << "' supplied " << demand 
-                      << " L. Remaining Level: " << currentLevel << " L\n";
-        } else {
-            std::cout << "Reservoir '" << name << "' is low on water!\n";
-        }
+    double calculateFlow() override {
+        return flowRate + (pressure / 20); // Pumps increase flow based on pressure
     }
-};
 
-// Junction class inheriting from WaterSystemComponent
-class Junction : public WaterSystemComponent {
-public:
-    std::vector<Pipe> connectedPipes;
-
-    Junction(std::string n, double p, double f) : WaterSystemComponent(n, p, f) {}
-
-    void addPipe(const Pipe& pipe) {
-        connectedPipes.push_back(pipe);
+    double calculateCost() {
+        return powerUsage * costPerUnit;
     }
 
     void simulate() override {
-        std::cout << "Junction '" << name << "' - Simulating connections...\n";
-        for (auto& pipe : connectedPipes) {
-            pipe.simulate();
-        }
+        cout << "Pump: " << name 
+             << " | Adjusted Pressure: " << pressure << " kPa"
+             << " | Power Cost: RM" << calculateCost() << endl;
     }
 };
 
-// Main function
+// Reservoir Class
+class Reservoir : public WaterSystemComponent {
+public:
+    double capacity;
+
+    Reservoir(string n, double p, double f, double cap) 
+        : WaterSystemComponent(n, p, f), capacity(cap) {}
+
+    double calculateFlow() override {
+        return (flowRate > capacity) ? capacity : flowRate;
+    }
+
+    void simulate() override {
+        cout << "Reservoir: " << name 
+             << " | Capacity: " << capacity << " liters"
+             << " | Flow: " << calculateFlow() << " L/s" << endl;
+    }
+};
+
+// Junction Class for Flexibility
+class Junction : public WaterSystemComponent {
+public:
+    vector<Pipe*> connectedPipes;
+
+    Junction(string n, double p, double f) : WaterSystemComponent(n, p, f) {}
+
+    void addPipe(Pipe* pipe) {
+        connectedPipes.push_back(pipe);
+        cout << "New pipe added to " << name 
+             << ". Total pipes: " << connectedPipes.size() << endl;
+    }
+
+    double calculateFlow() override {
+        double totalFlow = 0;
+        for (Pipe* p : connectedPipes) {
+            totalFlow += p->calculateFlow();
+        }
+        return totalFlow;
+    }
+
+    void simulate() override {
+        cout << "Junction: " << name 
+             << " | Connected Pipes: " << connectedPipes.size()
+             << " | Total Flow: " << calculateFlow() << " L/s" << endl;
+    }
+};
+
+// Main Function
 int main() {
-    Pipe p1("Main Pipe", 10, 50, 100);
-    Pump pump1("Pump A", 5, 120, 0);
-    Reservoir res1("Reservoir X", 1000, 800, 90, 0);
-    Junction j1("Junction 1", 100, 0);
+    // Create system components
+    Pipe pipe1("Main Pipe", 10, 50, 100, 50);
+    Pipe pipe2("Secondary Pipe", 10, 50, 100, 50);
+    Pump pump1("Central Pump", 100, 50, 500, 0.05);
+    Pump pump2("Secondary Pump", 100, 50, 500, 0.05);
+    pump2.adjustPressure(100);
+    Reservoir reservoir1("Water Tank", 120, 60, 5000);
+    Junction junction1("Distribution Hub", 110, 55);
 
-    j1.addPipe(p1);
+    // Simulate system behavior
+    junction1.addPipe(&pipe1);
+    junction1.addPipe(&pipe2);
+    pump1.adjustPressure(100);
 
-    // Run simulations
-    p1.simulate();
-    pump1.adjustPressure(20);
-    res1.supplyWater(200);
-    j1.simulate();
+    vector<WaterSystemComponent*> components = {&pipe1, &pump1, &reservoir1, &junction1};
+    
+    cout << "\n==== Water Distribution System Simulation ====\n";
+    for (auto comp : components) {
+        comp->simulate();
+    }
 
     return 0;
 }
