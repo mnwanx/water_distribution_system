@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -17,7 +18,7 @@ class WaterSystemComponent{
 };
 
 class Pipe : public WaterSystemComponent {
-    private:
+    protected:
         double diameter;
     public:
         Pipe(string n = "", double d = 0, double f = 0, double p = 0)  {
@@ -47,7 +48,7 @@ class Reservoir  : public WaterSystemComponent{
         double capacity, current_level;
     public:
         Reservoir(string name = "", double capacity = 0, double current_level = 0) : WaterSystemComponent(name = name), capacity(capacity), current_level(current_level) {}
-        void show_info()    {
+        void show_info() override {
             cout << "Reservoir: " << name << "\nCapacity: " << capacity << "L\nCurrent Level: " << current_level << " L\n";
         }
         void waterSupply(double in_demand) {
@@ -59,7 +60,22 @@ class Reservoir  : public WaterSystemComponent{
             }
         }
 };
-class Junction  : public WaterSystemComponent{};
+class Junction  : public WaterSystemComponent{
+    private:
+        vector<Pipe> connected_pipes;
+    public:
+        Junction(string name = "", double pressure = 0, double flowrate = 0) : WaterSystemComponent(name, pressure, flowrate) {}
+        void add_pipe(const Pipe& pipe) {
+            connected_pipes.push_back(pipe);
+        }  
+        
+        void show_info() override   {
+            cout << "Connected junction: " << endl;
+            for (auto& pipe : connected_pipes)    {
+                pipe.show_info();
+            }
+        }
+};
 
 
 
@@ -74,6 +90,7 @@ int main()  {
     Pipe pipe1("Main Pipe", 10, 50, 100);
     Pump pump1("Main Pump", 10, 10,10);
     Reservoir reservoir1("Main Reservoir", 20000, 20000);
+    Junction junction1("Main Junction", 10, 10);
     WaterSystemComponent().show_info();
     separator();
     pipe1.show_info();
@@ -81,6 +98,9 @@ int main()  {
     pump1.show_info();
     separator();
     reservoir1.show_info();
-    reservoir1.waterSupply(10);
+    separator();
+    // reservoir1.waterSupply(10);
+    junction1.add_pipe(pipe1);
+    junction1.show_info();
     return 0;
 }
