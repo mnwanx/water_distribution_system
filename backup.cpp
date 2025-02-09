@@ -1,9 +1,13 @@
+/*
+Student Name    : Muhammad Najwan bin Hassan
+Student ID      : 2023680886
+Project Title   : Water Distribution System
+*/
 #include <iostream>
 #include <vector>
-#include <string>
 using namespace std;
 
-// Base Class: Water System Component
+// superclass: Water System Component
 class WaterSystemComponent {
 protected:
     string name;
@@ -11,8 +15,8 @@ protected:
 
 public:
     WaterSystemComponent(string n, double p, double f) : name(n), pressure(p), flowRate(f) {}
-    virtual void simulate() = 0; // Abstract method
-    virtual double calculateFlow() = 0; // Abstract flow calculation
+    virtual void simulate() = 0; 
+    virtual double calculateFlow() = 0; 
 
     virtual void displayInfo() {
         cout << "Component: " << name 
@@ -23,8 +27,9 @@ public:
 
 // Pipe Class
 class Pipe : public WaterSystemComponent {
-public:
+private:
     double diameter, length;
+public:
 
     Pipe(string n, double d, double l, double p, double f) 
         : WaterSystemComponent(n, p, f), diameter(d), length(l) {}
@@ -43,10 +48,10 @@ public:
 
 // Pump Class with Cost Control
 class Pump : public WaterSystemComponent {
-public:
+private:
     double powerUsage;
     double costPerUnit;
-
+public:
     Pump(string n, double p, double f, double power, double cost) 
         : WaterSystemComponent(n, p, f), powerUsage(power), costPerUnit(cost) {}
 
@@ -72,20 +77,36 @@ public:
 
 // Reservoir Class
 class Reservoir : public WaterSystemComponent {
+private:
+    double capacity, currentLevel;
 public:
-    double capacity;
-
     Reservoir(string n, double p, double f, double cap) 
-        : WaterSystemComponent(n, p, f), capacity(cap) {}
+        : WaterSystemComponent(n, p, f), capacity(cap), currentLevel(cap) {}
 
     double calculateFlow() override {
         return (flowRate > capacity) ? capacity : flowRate;
     }
-
+    void waterAdd(double water_add) {
+        cout << "Water added to reservoir: " << water_add << " liters" << endl;
+        if (water_add <= capacity - currentLevel)  {
+            currentLevel += water_add;
+        }   else    {
+            cout << "Not enough capacity! Extra limit: " << water_add - (capacity - currentLevel) << " liters" << endl;
+            currentLevel = capacity;
+        }
+    }
+    void waterDemand(double demand)  {
+        cout << "Demanding: " << demand << " liters" << endl;
+        if (currentLevel >= demand) {
+            currentLevel -= demand;
+        }   else    {
+            cout << "Water Capacity not enough for demand" << endl;
+        }
+    }
     void simulate() override {
         cout << "Reservoir: " << name 
-             << " | Capacity: " << capacity << " liters"
-             << " | Flow: " << calculateFlow() << " L/s" << endl;
+             << " | Capacity: " << capacity << " liters |  Current Level: " << currentLevel
+             << "liters | Flow: " << calculateFlow() << " L/s" << endl;
     }
 };
 
@@ -117,21 +138,34 @@ public:
     }
 };
 
+
+void separator()    {
+    for (int i = 0; i < 20; i ++)   {
+        cout << "-";
+    }
+    cout << endl;
+}
 // Main Function
+string info = "Student Name    : Muhammad Najwan bin Hassan\nStudent ID      : 2023680886\n\n";
 int main() {
-    // Create system components
+    cout << info << endl;
+
+    // Object instance
     Pipe pipe1("Main Pipe", 10, 50, 100, 50);
     Pipe pipe2("Secondary Pipe", 10, 50, 100, 50);
+
     Pump pump1("Central Pump", 100, 50, 500, 0.05);
     Pump pump2("Secondary Pump", 100, 50, 500, 0.05);
-    pump2.adjustPressure(100);
+    
     Reservoir reservoir1("Water Tank", 120, 60, 5000);
     Junction junction1("Distribution Hub", 110, 55);
 
     // Simulate system behavior
     junction1.addPipe(&pipe1);
     junction1.addPipe(&pipe2);
+
     pump1.adjustPressure(100);
+    pump2.adjustPressure(100);
 
     vector<WaterSystemComponent*> components = {&pipe1, &pump1, &reservoir1, &junction1};
     
@@ -139,6 +173,11 @@ int main() {
     for (auto comp : components) {
         comp->simulate();
     }
+    separator();
+    reservoir1.waterDemand(4000);
+    reservoir1.simulate();
+    reservoir1.waterAdd(30000);
+    reservoir1.simulate();
 
     return 0;
 }

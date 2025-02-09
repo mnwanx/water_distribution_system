@@ -1,40 +1,45 @@
 @startuml
 class WaterSystemComponent {
-    +string name
-    +virtual void simulate() 
+    # #string name
+    # #double flowrate
+    # #pressure
+    + +virtual void simulate() 
+    + +virtual void calculateFlow() 
 }
 
 class Pipe {
-    +double diameter
-    +double flowRate
-    +double length
-    +void calculateFlow()
+    - -double diameter
+    + +void simulate()
+    + +void calculateFlow()
 }
 
 class Pump {
-    +double pressure
-    +double power
-    +void adjustPressure()
+    - -double power
+    - -double costPerUnit
+    + +void adjustPressure()
+    + +void calculateFlow()
+    + +void simulate()
 }
 
 class Reservoir {
-    +double capacity
-    +double currentWaterLevel
-    +void supplyWater()
+    - -double capacity
+    - -double currentLevel
+    + +void waterDemand()
+    + +void waterAdd()
+    + +void simulate()
 }
 
 class Junction {
-    +list<Pipe> connectedPipes
-    +void distributeFlow()
+    # #list<Pipe> connectedPipes
+    + +void simulate()
+    + +void calculateFlow()
+    + +void addPipe()
 }
 
-WaterSystemComponent <|-- Pipe
-WaterSystemComponent <|-- Pump
-WaterSystemComponent <|-- Reservoir
-WaterSystemComponent <|-- Junction
 
-Junction "1" *-- "many" Pipe : connects
-Pump "1" --* "many" Pipe : supplies
-Reservoir "1" --* "many" Pipe : feeds
+WaterSystemComponent <-- Pump
+WaterSystemComponent <-- Reservoir
+WaterSystemComponent <-- Junction
+WaterSystemComponent <-- Pipe
 
 @enduml
